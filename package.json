@@ -1,8 +1,8 @@
 {
   "name": "yanxu-language",
   "displayName": "言序语言",
-  "description": "言序编程语言的官方 VS Code 支持：语法高亮、代码片段与运行命令。",
-  "version": "0.3.0-alpha.1",
+  "description": "言序 0.7 的官方 VS Code 支持：语法高亮、LSP、格式化与运行命令。",
+  "version": "0.7.0",
   "publisher": "yanxulang",
   "license": "MIT",
   "engines": {
@@ -10,7 +10,7 @@
   },
   "categories": ["Programming Languages"],
   "keywords": ["言序", "中文", "Chinese", "language", "yanxu"],
-  "main": "./extension.js",
+  "main": "./dist/extension.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/YanXuLang/vscode-extension.git"
@@ -21,10 +21,17 @@
   "homepage": "https://yanxu.dev/",
   "scripts": {
     "check": "node scripts/check.js",
-    "package": "vsce package --no-dependencies"
+    "test": "node --test tests/*.test.js",
+    "build": "esbuild extension.js --bundle --external:vscode --format=cjs --platform=node --target=node18 --outfile=dist/extension.js",
+    "vscode:prepublish": "npm run check && npm test && npm run build",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.6.0"
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0"
   },
   "contributes": {
     "languages": [
@@ -49,15 +56,46 @@
       }
     ],
     "commands": [
-      { "command": "yanxu.runFile", "title": "言序：运行当前文卷", "icon": "$(play)" },
-      { "command": "yanxu.openRepl", "title": "言序：打开 REPL" },
-      { "command": "yanxu.openDocs", "title": "言序：打开文档" }
+      { "command": "yanxu.runFile", "title": "运行当前文卷", "category": "言序", "icon": "$(play)" },
+      { "command": "yanxu.runSelection", "title": "在 REPL 中运行选区或当前行", "category": "言序" },
+      { "command": "yanxu.checkFile", "title": "检查当前文卷", "category": "言序", "icon": "$(check)" },
+      { "command": "yanxu.runVm", "title": "使用 VM 运行当前文卷", "category": "言序" },
+      { "command": "yanxu.formatFile", "title": "格式化当前文卷", "category": "言序" },
+      { "command": "yanxu.debugFile", "title": "跟踪当前文卷", "category": "言序" },
+      { "command": "yanxu.testWorkspace", "title": "运行工作区测试", "category": "言序" },
+      { "command": "yanxu.openRepl", "title": "打开 REPL", "category": "言序" },
+      { "command": "yanxu.restartLanguageServer", "title": "重启语言服务", "category": "言序" },
+      { "command": "yanxu.showLanguageServerOutput", "title": "显示语言服务日志", "category": "言序" },
+      { "command": "yanxu.openDocs", "title": "打开文档", "category": "言序" }
     ],
     "menus": {
       "editor/title": [
-        { "command": "yanxu.runFile", "when": "resourceExtname == .yx", "group": "navigation" }
+        { "command": "yanxu.runFile", "when": "editorLangId == yanxu", "group": "navigation@1" },
+        { "command": "yanxu.checkFile", "when": "editorLangId == yanxu", "group": "navigation@2" }
+      ],
+      "editor/context": [
+        { "command": "yanxu.runSelection", "when": "editorLangId == yanxu", "group": "yanxu@1" },
+        { "command": "yanxu.runFile", "when": "editorLangId == yanxu", "group": "yanxu@2" },
+        { "command": "yanxu.checkFile", "when": "editorLangId == yanxu", "group": "yanxu@3" }
       ]
     },
+    "taskDefinitions": [
+      {
+        "type": "yanxu",
+        "required": ["command"],
+        "properties": {
+          "command": {
+            "type": "string",
+            "enum": ["run", "check", "vm", "trace", "test"],
+            "description": "要执行的言序任务。"
+          },
+          "target": {
+            "type": "string",
+            "description": "目标文卷或目录；默认使用当前文件或工作区。"
+          }
+        }
+      }
+    ],
     "configuration": {
       "title": "言序",
       "properties": {
@@ -70,6 +108,18 @@
           "type": "boolean",
           "default": true,
           "description": "运行当前文卷前自动保存。"
+        },
+        "yanxu.languageServer.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "自动启动言序语言服务，提供实时诊断和格式化。"
+        },
+        "yanxuLanguageServer.trace.server": {
+          "type": "string",
+          "scope": "window",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "写入言序语言服务日志的通信详细程度。"
         }
       }
     }

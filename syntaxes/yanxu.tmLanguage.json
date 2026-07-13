@@ -38,10 +38,10 @@
         { "match": "\\b(引)(?=\\s*[「“\"])", "captures": { "1": { "name": "keyword.control.import.yanxu" } } }
       ]
     },
-    "keywords": { "patterns": [{ "name": "keyword.control.yanxu", "match": "\\b(?:令|定|置|为|言|若|则|否则|终|当|逐|于|法|类|引|作|归|试|救|抛)\\b" }] },
-    "types": { "patterns": [{ "name": "support.type.yanxu", "match": "(?<=[：:])\\s*(?:数|文|理|空|法|类|对象|模块|列|典|误|任意)\\b" }] },
+    "keywords": { "patterns": [{ "name": "keyword.control.yanxu", "match": "\\b(?:公|令|定|置|为|言|若|则|否则|终|当|逐|于|法|类|承|引|作|归|试|救|抛)\\b" }] },
+    "types": { "patterns": [{ "name": "support.type.yanxu", "match": "(?<=[：:|])\\s*(?:数|文|理|空|法|类|对象|模块|列|元|典|误|任意)\\b" }] },
     "constants": { "patterns": [{ "name": "constant.language.yanxu", "match": "\\b(?:真|假|空|此)\\b" }] },
-    "builtins": { "patterns": [{ "name": "support.function.builtin.yanxu", "match": "\\b(?:时刻|长度|类型|追加|弹出|有键)(?=\\s*[（(])" }] },
+    "builtins": { "patterns": [{ "name": "support.function.builtin.yanxu", "match": "\\b(?:时刻|长度|类型|追加|弹出|有键|插入|删除|键列|值列|绝对值|平方根|幂)(?=\\s*[（(])" }] },
     "operators": { "patterns": [{ "name": "keyword.operator.yanxu", "match": "(?:不小于|大于等于|不大于|小于等于|不等于|等于|大于|小于|加|减|乘|除|且|或|非|==|!=|>=|<=|>|<|\\+|-|\\*|/|×|÷|!)" }] },
     "members": { "patterns": [{ "name": "variable.other.property.yanxu", "match": "(?<=\\.)[^\\s（(，,:：.；;]+" }] }
   }
