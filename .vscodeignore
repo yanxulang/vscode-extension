@@ -1,5 +1,8 @@
 .github/**
 scripts/**
+tests/**
 node_modules/**
 package-lock.json
+extension.js
+yanxu-commands.js
 *.vsix

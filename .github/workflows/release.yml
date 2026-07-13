@@ -9,21 +9,37 @@ permissions:
   contents: write
 
 jobs:
-  vsix:
+  release:
     runs-on: ubuntu-latest
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run check
-      - run: npm run package
-      - name: 创建发行版并上传 VSIX
+      - run: npm run vscode:prepublish
+      - name: 校验标签并打包
+        id: package
+        shell: bash
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "标签 $GITHUB_REF_NAME 与 package.json 版本 $version 不一致" >&2
+            exit 1
+          fi
+          vsix="yanxu-language-$version.vsix"
+          npx vsce package --out "$vsix"
+          echo "vsix=$vsix" >> "$GITHUB_OUTPUT"
+      - name: 创建 GitHub Release 并上传 VSIX
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          prerelease=""
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease="--prerelease"; fi
-          gh release create "$GITHUB_REF_NAME" ./*.vsix --generate-notes $prerelease --title "言序 VS Code $GITHUB_REF_NAME"
+          VSIX: ${{ steps.package.outputs.vsix }}
+        run: gh release create "$GITHUB_REF_NAME" "$VSIX" --verify-tag --generate-notes --title "言序 VS Code $GITHUB_REF_NAME"
+      - name: 发布到 VS Code Marketplace
+        if: env.VSCE_PAT != ''
+        env:
+          VSIX: ${{ steps.package.outputs.vsix }}
+        run: npx vsce publish --packagePath "$VSIX" --pat "$VSCE_PAT"
