@@ -13,12 +13,12 @@
   "main": "./extension.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YanXuLang/vscode.git"
+    "url": "https://github.com/YanXuLang/vscode-extension.git"
   },
   "bugs": {
-    "url": "https://github.com/YanXuLang/vscode/issues"
+    "url": "https://github.com/YanXuLang/vscode-extension/issues"
   },
-  "homepage": "https://yanxulang.github.io/website/",
+  "homepage": "https://yanxu.dev/",
   "scripts": {
     "check": "node scripts/check.js",
     "package": "vsce package --no-dependencies"

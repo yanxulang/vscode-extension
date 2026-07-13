@@ -34,7 +34,7 @@ function activate(context) {
   });
 
   const openDocs = vscode.commands.registerCommand("yanxu.openDocs", () => {
-    vscode.env.openExternal(vscode.Uri.parse("https://yanxulang.github.io/docs/"));
+    vscode.env.openExternal(vscode.Uri.parse("https://docs.yanxu.dev/"));
   });
 
   context.subscriptions.push(runFile, openRepl, openDocs);
