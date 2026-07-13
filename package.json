@@ -1,0 +1,77 @@
+{
+  "name": "yanxu-language",
+  "displayName": "言序语言",
+  "description": "言序编程语言的官方 VS Code 支持：语法高亮、代码片段与运行命令。",
+  "version": "0.3.0-alpha.1",
+  "publisher": "yanxulang",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Programming Languages"],
+  "keywords": ["言序", "中文", "Chinese", "language", "yanxu"],
+  "main": "./extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YanXuLang/vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YanXuLang/vscode/issues"
+  },
+  "homepage": "https://yanxulang.github.io/website/",
+  "scripts": {
+    "check": "node scripts/check.js",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "yanxu",
+        "aliases": ["言序", "Yanxu", "yanxu"],
+        "extensions": [".yx"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "yanxu",
+        "scopeName": "source.yanxu",
+        "path": "./syntaxes/yanxu.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "yanxu",
+        "path": "./snippets/yanxu.json"
+      }
+    ],
+    "commands": [
+      { "command": "yanxu.runFile", "title": "言序：运行当前文卷", "icon": "$(play)" },
+      { "command": "yanxu.openRepl", "title": "言序：打开 REPL" },
+      { "command": "yanxu.openDocs", "title": "言序：打开文档" }
+    ],
+    "menus": {
+      "editor/title": [
+        { "command": "yanxu.runFile", "when": "resourceExtname == .yx", "group": "navigation" }
+      ]
+    },
+    "configuration": {
+      "title": "言序",
+      "properties": {
+        "yanxu.executablePath": {
+          "type": "string",
+          "default": "yanxu",
+          "description": "言序命令行程序路径。默认从 PATH 查找 yanxu。"
+        },
+        "yanxu.saveBeforeRun": {
+          "type": "boolean",
+          "default": true,
+          "description": "运行当前文卷前自动保存。"
+        }
+      }
+    }
+  }
+}

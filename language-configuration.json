@@ -1,0 +1,38 @@
+{
+  "comments": {
+    "lineComment": "//"
+  },
+  "brackets": [
+    ["（", "）"],
+    ["(", ")"],
+    ["【", "】"],
+    ["[", "]"],
+    ["{", "}"],
+    ["「", "」"],
+    ["“", "”"]
+  ],
+  "autoClosingPairs": [
+    { "open": "（", "close": "）" },
+    { "open": "(", "close": ")" },
+    { "open": "【", "close": "】" },
+    { "open": "[", "close": "]" },
+    { "open": "{", "close": "}" },
+    { "open": "「", "close": "」", "notIn": ["string", "comment"] },
+    { "open": "“", "close": "”", "notIn": ["string", "comment"] },
+    { "open": "\"", "close": "\"", "notIn": ["string", "comment"] }
+  ],
+  "surroundingPairs": [
+    ["（", "）"], ["(", ")"], ["【", "】"], ["[", "]"], ["{", "}"], ["「", "」"], ["“", "”"], ["\"", "\""]
+  ],
+  "indentationRules": {
+    "increaseIndentPattern": "^\\s*(?:类|法|若|否则|当|逐|试|救)\\b.*(?:则)?\\s*$",
+    "decreaseIndentPattern": "^\\s*(?:否则|终)\\b"
+  },
+  "folding": {
+    "markers": {
+      "start": "^\\s*(?:类|法|若|当|逐|试)\\b",
+      "end": "^\\s*终\\b"
+    }
+  },
+  "wordPattern": "([^\\s（）()【】\\[\\]{}，,:：.；;＋+－＊*×／/÷！!=<>\\\"“”「」#-]+)"
+}
