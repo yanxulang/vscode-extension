@@ -12,6 +12,8 @@ const {
   lookupLanguageSymbol,
   signatureAt
 } = require("./language-features");
+const { callAt, romanize } = require("./symbol-index");
+const { WorkspaceIndexer } = require("./workspace-indexer");
 
 let client;
 let clientWatcher;
@@ -19,6 +21,7 @@ let clientStateSubscription;
 let languageOutput;
 let languageStatus;
 let replTerminal;
+let workspaceIndexer;
 
 function configuration() {
   return vscode.workspace.getConfiguration("yanxu");
@@ -174,7 +177,31 @@ async function startLanguageServer({ notify = true } = {}) {
         { scheme: "untitled", language: "yanxu" }
       ],
       synchronize: { fileEvents: clientWatcher },
-      outputChannel: languageOutput
+      outputChannel: languageOutput,
+      middleware: {
+        async provideCompletionItem(document, position, context, token, next) {
+          const result = await next(document, position, context, token);
+          const items = Array.isArray(result) ? result : result?.items;
+          const indexedNames = new Set(
+            indexedCompletionSymbols(workspaceIndexer?.index, document, position).map(({ name }) => name)
+          );
+          for (const item of items ?? []) {
+            const label = typeof item.label === "string" ? item.label : item.label?.label;
+            if (!label) continue;
+            if (configuration().get("completion.pinyin", true)) {
+              const search = romanize(label).filterText;
+              item.filterText = [...new Set([item.filterText, search].filter(Boolean))].join(" ");
+            }
+          }
+          const filtered = (items ?? []).filter((item) => {
+            const label = typeof item.label === "string" ? item.label : item.label?.label;
+            return !indexedNames.has(label);
+          });
+          if (Array.isArray(result)) return filtered;
+          if (result?.items) result.items = filtered;
+          return result;
+        }
+      }
     }
   );
   client = nextClient;
@@ -285,10 +312,30 @@ function completionKind(kind) {
   return {
     keyword: vscode.CompletionItemKind.Keyword,
     type: vscode.CompletionItemKind.Class,
+    class: vscode.CompletionItemKind.Class,
+    interface: vscode.CompletionItemKind.Interface,
     function: vscode.CompletionItemKind.Function,
+    method: vscode.CompletionItemKind.Method,
+    field: vscode.CompletionItemKind.Field,
+    variable: vscode.CompletionItemKind.Variable,
+    parameter: vscode.CompletionItemKind.Variable,
     constant: vscode.CompletionItemKind.Constant,
     module: vscode.CompletionItemKind.Module
   }[kind] ?? vscode.CompletionItemKind.Text;
+}
+
+function symbolKind(kind) {
+  return {
+    module: vscode.SymbolKind.Module,
+    class: vscode.SymbolKind.Class,
+    interface: vscode.SymbolKind.Interface,
+    function: vscode.SymbolKind.Function,
+    method: vscode.SymbolKind.Method,
+    field: vscode.SymbolKind.Field,
+    variable: vscode.SymbolKind.Variable,
+    parameter: vscode.SymbolKind.Variable,
+    constant: vscode.SymbolKind.Constant
+  }[kind] ?? vscode.SymbolKind.String;
 }
 
 function languageDocumentation(entry) {
@@ -299,51 +346,167 @@ function languageDocumentation(entry) {
   return markdown;
 }
 
-function createCompletionProvider() {
+function indexedDocumentation(symbol) {
+  const markdown = new vscode.MarkdownString();
+  markdown.appendCodeblock(symbol.detail || symbol.name, "yanxu");
+  if (symbol.documentation) markdown.appendMarkdown(`\n${symbol.documentation}`);
+  if (symbol.container) markdown.appendMarkdown(`\n\n归属：**${symbol.container}**`);
+  return markdown;
+}
+
+function indexedInsertText(symbol) {
+  if (!["function", "method"].includes(symbol.kind)) return symbol.name;
+  const parameters = symbol.parameters ?? [];
+  if (!parameters.length) return `${symbol.name}（）`;
+  const placeholders = parameters.map((parameter, index) => `\${${index + 1}:${parameter.name}}`);
+  return `${symbol.name}（${placeholders.join("，")}）`;
+}
+
+function indexedCompletionSymbols(indexer, document, position) {
+  if (!indexer) return [];
+  const linePrefix = document.lineAt(position.line).text.slice(0, position.character);
+  const memberMatch = linePrefix.match(/([^\s（）()【】\[\]{}，,:：.；;"“”「」]+)\s*\.\s*[^\s（）()【】\[\]{}，,:：.；;"“”「」]*$/);
+  if (/标准\s*[:：][^」”"]*$/.test(linePrefix)) return indexer.standardModuleSymbols();
+  if (memberMatch) return indexer.membersForQualifier(document.uri.toString(), memberMatch[1], position.line);
+  return indexer.completionSymbols(document.uri.toString(), position.line, true);
+}
+
+function createCompletionProvider(indexer) {
   return {
     provideCompletionItems(document, position) {
-      if (client?.state === State.Running) return undefined;
       const linePrefix = document.lineAt(position.line).text.slice(0, position.character);
-      return completionEntries(linePrefix).map((entry) => {
+      const serverRunning = client?.state === State.Running;
+      const indexed = indexedCompletionSymbols(indexer, document, position);
+      const base = serverRunning ? [] : completionEntries(linePrefix);
+      const baseItems = base.map((entry) => {
         const item = new vscode.CompletionItem(entry.label, completionKind(entry.kind));
         item.detail = entry.detail;
         item.documentation = languageDocumentation(entry);
         item.sortText = `${entry.kind === "function" ? "1" : "2"}-${entry.label}`;
+        item.filterText = configuration().get("completion.pinyin", true)
+          ? romanize(entry.label).filterText
+          : entry.label;
         if (entry.insertText) item.insertText = new vscode.SnippetString(entry.insertText);
         return item;
       });
+      const indexedItems = indexed.map((symbol) => {
+        const item = new vscode.CompletionItem(symbol.name, completionKind(symbol.kind));
+        const origin = symbol.fsPath ? path.basename(symbol.fsPath) : "标准库";
+        item.detail = `言序索引 · ${symbol.detail || symbol.kind} · ${origin}`;
+        item.documentation = indexedDocumentation(symbol);
+        item.sortText = `0-${symbol.name}`;
+        item.filterText = configuration().get("completion.pinyin", true) ? symbol.filterText : symbol.name;
+        const insertText = indexedInsertText(symbol);
+        item.insertText = ["function", "method"].includes(symbol.kind)
+          ? new vscode.SnippetString(insertText)
+          : insertText;
+        return item;
+      });
+      return [...indexedItems, ...baseItems];
     }
   };
 }
 
-function createHoverProvider() {
+function wordRange(document, position) {
+  return document.getWordRangeAtPosition(
+    position,
+    /[^\s（）()【】\[\]{}，,:：.；;"“”「」]+/
+  );
+}
+
+function qualifierBefore(document, range) {
+  const prefix = document.lineAt(range.start.line).text.slice(0, range.start.character);
+  return prefix.match(/([^\s（）()【】\[\]{}，,:：.；;"“”「」]+)\s*\.\s*$/)?.[1] ?? "";
+}
+
+function createHoverProvider(indexer) {
   return {
     provideHover(document, position) {
-      const range = document.getWordRangeAtPosition(
-        position,
-        /[^\s（）()【】\[\]{}，,:：.；;"“”「」]+/
-      );
+      const range = wordRange(document, position);
       if (!range) return undefined;
-      const entry = lookupLanguageSymbol(document.getText(range));
-      return entry ? new vscode.Hover(languageDocumentation(entry), range) : undefined;
+      const name = document.getText(range);
+      const entry = lookupLanguageSymbol(name);
+      if (entry) return new vscode.Hover(languageDocumentation(entry), range);
+      const symbol = indexer.definitions(
+        document.uri.toString(),
+        name,
+        qualifierBefore(document, range),
+        position.line
+      )[0];
+      return symbol ? new vscode.Hover(indexedDocumentation(symbol), range) : undefined;
     }
   };
 }
 
-function createSignatureHelpProvider() {
+function createSignatureHelpProvider(indexer) {
   return {
     provideSignatureHelp(document, position) {
       const start = new vscode.Position(Math.max(0, position.line - 20), 0);
-      const entry = signatureAt(document.getText(new vscode.Range(start, position)));
-      if (!entry) return undefined;
+      const source = document.getText(new vscode.Range(start, position));
+      const entry = signatureAt(source);
+      if (entry) {
+        const signature = new vscode.SignatureInformation(entry.signature, entry.documentation);
+        signature.parameters = entry.parameters.map((parameter) => new vscode.ParameterInformation(parameter));
+        const help = new vscode.SignatureHelp();
+        help.signatures = [signature];
+        help.activeSignature = 0;
+        help.activeParameter = entry.activeParameter;
+        return help;
+      }
 
-      const signature = new vscode.SignatureInformation(entry.signature, entry.documentation);
-      signature.parameters = entry.parameters.map((parameter) => new vscode.ParameterInformation(parameter));
+      const call = callAt(source);
+      if (!call) return undefined;
+      const symbol = indexer.signature(document.uri.toString(), call.name, call.qualifier, position.line);
+      if (!symbol) return undefined;
+
+      const signature = new vscode.SignatureInformation(symbol.detail || symbol.name, symbol.documentation);
+      signature.parameters = (symbol.parameters ?? []).map(
+        (parameter) => new vscode.ParameterInformation(parameter.type ? `${parameter.name}：${parameter.type}` : parameter.name)
+      );
       const help = new vscode.SignatureHelp();
       help.signatures = [signature];
       help.activeSignature = 0;
-      help.activeParameter = entry.activeParameter;
+      help.activeParameter = Math.min(call.activeParameter, Math.max(0, signature.parameters.length - 1));
       return help;
+    }
+  };
+}
+
+function symbolLocation(symbol) {
+  const uri = vscode.Uri.parse(symbol.uri);
+  const start = new vscode.Position(symbol.line, symbol.character);
+  const end = new vscode.Position(symbol.line, symbol.endCharacter);
+  return new vscode.Location(uri, new vscode.Range(start, end));
+}
+
+function createDefinitionProvider(indexer) {
+  return {
+    provideDefinition(document, position) {
+      const range = wordRange(document, position);
+      if (!range) return undefined;
+      const targets = indexer.definitions(
+        document.uri.toString(),
+        document.getText(range),
+        qualifierBefore(document, range),
+        position.line
+      );
+      const useful = client?.state === State.Running
+        ? targets.filter((symbol) => symbol.uri !== document.uri.toString())
+        : targets;
+      return useful.length ? useful.map(symbolLocation) : undefined;
+    }
+  };
+}
+
+function createWorkspaceSymbolProvider(indexer) {
+  return {
+    provideWorkspaceSymbols(query) {
+      return indexer.workspaceSymbols(query).map((symbol) => new vscode.SymbolInformation(
+        symbol.name,
+        symbolKind(symbol.kind),
+        symbol.container || "言序",
+        symbolLocation(symbol)
+      ));
     }
   };
 }
@@ -352,6 +515,7 @@ async function activate(context) {
   languageOutput = vscode.window.createOutputChannel("言序语言服务");
   languageStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 20);
   languageStatus.command = "yanxu.restartLanguageServer";
+  workspaceIndexer = new WorkspaceIndexer(languageOutput);
 
   context.subscriptions.push(
     languageOutput,
@@ -364,15 +528,26 @@ async function activate(context) {
       if (event.affectsConfiguration("yanxu.executablePath") || event.affectsConfiguration("yanxu.languageServer.enabled")) {
         startLanguageServer();
       }
+      if (event.affectsConfiguration("yanxu.index") || event.affectsConfiguration("yanxu.executablePath")) {
+        workspaceIndexer.refreshConfiguration();
+      }
     }),
+    workspaceIndexer,
     vscode.tasks.registerTaskProvider("yanxu", createTaskProvider()),
     vscode.debug.registerDebugConfigurationProvider("yanxu", createDebugConfigurationProvider()),
     vscode.debug.registerDebugAdapterDescriptorFactory("yanxu", createDebugAdapterFactory()),
-    vscode.languages.registerCompletionItemProvider("yanxu", createCompletionProvider(), "：", ":", "|"),
-    vscode.languages.registerHoverProvider("yanxu", createHoverProvider()),
+    vscode.languages.registerCompletionItemProvider("yanxu", createCompletionProvider(workspaceIndexer.index), "：", ":", "|", "."),
+    vscode.languages.registerHoverProvider("yanxu", createHoverProvider(workspaceIndexer.index)),
+    vscode.languages.registerDefinitionProvider("yanxu", createDefinitionProvider(workspaceIndexer.index)),
+    vscode.languages.registerWorkspaceSymbolProvider(createWorkspaceSymbolProvider(workspaceIndexer.index)),
+    vscode.workspace.registerTextDocumentContentProvider("yanxu-stdlib", {
+      provideTextDocumentContent(uri) {
+        return workspaceIndexer.index.standardContent(uri.toString());
+      }
+    }),
     vscode.languages.registerSignatureHelpProvider(
       "yanxu",
-      createSignatureHelpProvider(),
+      createSignatureHelpProvider(workspaceIndexer.index),
       "（",
       "(",
       "，",
@@ -388,12 +563,19 @@ async function activate(context) {
     vscode.commands.registerCommand("yanxu.testWorkspace", testWorkspace),
     vscode.commands.registerCommand("yanxu.openRepl", openRepl),
     vscode.commands.registerCommand("yanxu.restartLanguageServer", restartLanguageServer),
+    vscode.commands.registerCommand("yanxu.rebuildIndex", async () => {
+      const result = await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: "正在重建言序符号索引" },
+        () => workspaceIndexer.rebuild()
+      );
+      vscode.window.showInformationMessage(`言序索引已重建：${result.files} 个文卷，${result.symbols} 个用户符号。`);
+    }),
     vscode.commands.registerCommand("yanxu.showLanguageServerOutput", () => languageOutput.show()),
     vscode.commands.registerCommand("yanxu.openDocs", () => vscode.env.openExternal(vscode.Uri.parse("https://docs.yanxu.dev/")))
   );
 
   syncLanguageStatusVisibility();
-  await startLanguageServer({ notify: false });
+  await Promise.all([workspaceIndexer.initialize(), startLanguageServer({ notify: false })]);
 }
 
 async function deactivate() {

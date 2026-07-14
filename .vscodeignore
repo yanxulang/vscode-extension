@@ -6,5 +6,9 @@ package-lock.json
 extension.js
 yanxu-commands.js
 language-features.js
+symbol-index.js
+workspace-indexer.js
+package-resolver.js
+resources/**
 images/icon.svg
 *.vsix

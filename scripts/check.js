@@ -7,7 +7,8 @@ const jsonFiles = [
   "package.json",
   "language-configuration.json",
   "syntaxes/yanxu.tmLanguage.json",
-  "snippets/yanxu.json"
+  "snippets/yanxu.json",
+  "resources/standard-library.json"
 ];
 
 for (const file of jsonFiles) {
@@ -67,10 +68,22 @@ if (!extensionSource.includes('registerDebugAdapterDescriptorFactory("yanxu"')) 
 for (const provider of [
   "registerCompletionItemProvider",
   "registerHoverProvider",
-  "registerSignatureHelpProvider"
+  "registerSignatureHelpProvider",
+  "registerDefinitionProvider",
+  "registerWorkspaceSymbolProvider"
 ]) {
   if (!extensionSource.includes(`vscode.languages.${provider}`)) {
     throw new Error(`扩展入口未注册语言功能：${provider}`);
   }
+}
+if (!extensionSource.includes('registerTextDocumentContentProvider("yanxu-stdlib"')) {
+  throw new Error("扩展入口未注册标准库虚拟文卷提供器");
+}
+if (!manifest.dependencies?.["pinyin-pro"]) {
+  throw new Error("package.json 缺少拼音补全依赖");
+}
+const standardLibrary = JSON.parse(fs.readFileSync(path.join(root, "resources/standard-library.json"), "utf8"));
+if (!Array.isArray(standardLibrary.modules) || standardLibrary.modules.length < 23) {
+  throw new Error("内置标准库索引不完整");
 }
 console.log("言序 VS Code 扩展结构有效。");

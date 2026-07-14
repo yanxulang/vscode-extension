@@ -1,8 +1,8 @@
 {
   "name": "yanxu-language",
   "displayName": "言序语言",
-  "description": "言序 1.1.4 的官方 VS Code 支持：字节串、二进制网络、TCP/UDP 套接字、语义 LSP、DAP 与格式化。",
-  "version": "1.1.4",
+  "description": "言序 VS Code 扩展 1.2.0：工作区与外部模块符号索引、标准库索引、拼音补全、语义 LSP、DAP 与格式化。",
+  "version": "1.2.0",
   "publisher": "yanxulang",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -32,6 +32,7 @@
     "package": "vsce package"
   },
   "dependencies": {
+    "pinyin-pro": "^3.28.1",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
@@ -107,6 +108,7 @@
       { "command": "yanxu.testWorkspace", "title": "运行工作区测试", "category": "言序" },
       { "command": "yanxu.openRepl", "title": "打开 REPL", "category": "言序" },
       { "command": "yanxu.restartLanguageServer", "title": "重启语言服务", "category": "言序" },
+      { "command": "yanxu.rebuildIndex", "title": "重建符号索引", "category": "言序" },
       { "command": "yanxu.showLanguageServerOutput", "title": "显示语言服务日志", "category": "言序" },
       { "command": "yanxu.openDocs", "title": "打开文档", "category": "言序" }
     ],
@@ -144,7 +146,8 @@
         "editor.autoIndent": "full",
         "editor.insertSpaces": true,
         "editor.tabSize": 4,
-        "editor.wordBasedSuggestions": "matchingDocuments"
+        "editor.wordBasedSuggestions": "matchingDocuments",
+        "editor.suggest.matchOnWordStartOnly": false
       }
     },
     "configuration": {
@@ -164,6 +167,27 @@
           "type": "boolean",
           "default": true,
           "description": "自动启动言序语言服务，提供实时诊断和格式化。"
+        },
+        "yanxu.index.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "扫描言序工作区并为用户声明、成员、导入模块和标准库建立符号索引。"
+        },
+        "yanxu.index.maxFiles": {
+          "type": "integer",
+          "default": 5000,
+          "minimum": 100,
+          "description": "一次索引最多扫描的 .yx 文卷数量。"
+        },
+        "yanxu.index.includeExternalModules": {
+          "type": "boolean",
+          "default": true,
+          "description": "递归索引工作区之外由相对路径或包导入引用的言序模块。"
+        },
+        "yanxu.completion.pinyin": {
+          "type": "boolean",
+          "default": true,
+          "description": "允许用中文名称的全拼或拼音首字母筛选代码补全和工作区符号。"
         },
         "yanxuLanguageServer.trace.server": {
           "type": "string",
