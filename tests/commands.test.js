@@ -12,6 +12,7 @@ test("文件命令映射到 1.0 CLI", () => {
 
 test("工作区测试命令保留目标目录", () => {
   assert.deepEqual(taskArguments("test", "/workspace/言序"), ["试", "/workspace/言序"]);
+  assert.deepEqual(taskArguments("compile", "/workspace/言序"), ["compile", "/workspace/言序"]);
 });
 
 test("所有文件命令都引用已声明任务", () => {

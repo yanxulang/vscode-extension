@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-14T15:33:12.354Z",
+  "generatedAt": "2026-07-14T19:21:09.330Z",
   "modules": [
     {
       "name": "文字",
@@ -312,6 +312,25 @@
           "errors": [
             "权限",
             "I/O"
+          ]
+        },
+        {
+          "name": "创建目录",
+          "signature": "法（文）：空",
+          "kind": "function",
+          "errors": [
+            "权限",
+            "I/O"
+          ]
+        },
+        {
+          "name": "删除",
+          "signature": "法（文，递归：理）：空",
+          "kind": "function",
+          "errors": [
+            "权限",
+            "I/O",
+            "特殊文件"
           ]
         }
       ]
@@ -751,6 +770,62 @@
           "signature": "法（）：列<文>",
           "kind": "function",
           "errors": []
+        }
+      ]
+    },
+    {
+      "name": "进程",
+      "description": "",
+      "members": [
+        {
+          "name": "执行",
+          "signature": "法（程序：文，参数：列<文>，工作目录：文?，超时毫秒：数）：典<文，任意>",
+          "kind": "function",
+          "errors": [
+            "PROCESS_PROGRAM",
+            "PROCESS_SPAWN",
+            "PROCESS_WAIT",
+            "PROCESS_TIMEOUT",
+            "PROCESS_LIMIT",
+            "PROCESS_READ",
+            "PROCESS_UTF8",
+            "PROCESS_UNSUPPORTED"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "资源",
+      "description": "",
+      "members": [
+        {
+          "name": "读取字节",
+          "signature": "法（包内相对路径：文）：字节串",
+          "kind": "function",
+          "errors": [
+            "未声明",
+            "I/O",
+            "BYTES_LIMIT"
+          ]
+        },
+        {
+          "name": "读取文字",
+          "signature": "法（包内相对路径：文）：文",
+          "kind": "function",
+          "errors": [
+            "未声明",
+            "I/O",
+            "非 UTF-8"
+          ]
+        },
+        {
+          "name": "目录",
+          "signature": "法（包内相对路径：文）：列<文>",
+          "kind": "function",
+          "errors": [
+            "未声明",
+            "I/O"
+          ]
         }
       ]
     },

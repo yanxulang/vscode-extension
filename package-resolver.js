@@ -27,19 +27,60 @@ function parseScalar(value) {
   return match ? (match[1] ?? match[2]).replace(/\\"/g, '"').replace(/\\\\/g, "\\") : "";
 }
 
-function parseLock(text) {
-  return String(text || "")
-    .split(/^\s*\[\[package\]\]\s*$/m)
-    .slice(1)
-    .map((block) => {
-      const result = {};
-      for (const line of block.split(/\r?\n/)) {
-        const match = line.match(/^\s*(name|version|source|revision|checksum|entry)\s*=\s*(.+)$/);
-        if (match) result[match[1]] = parseScalar(match[2]);
+function parseAssignments(text) {
+  const result = {};
+  for (const line of String(text || "").split(/\r?\n/)) {
+    const match = line.match(/^\s*["']?([^="']+?)["']?\s*=\s*(.+)$/);
+    if (match) result[match[1].trim()] = parseScalar(match[2]);
+  }
+  return result;
+}
+
+function tableAssignments(text, tableName) {
+  const result = {};
+  let current = "";
+  for (const line of String(text || "").split(/\r?\n/)) {
+    const heading = line.match(/^\s*\[([^\]]+)\]\s*$/);
+    if (heading) {
+      current = heading[1].trim();
+      continue;
+    }
+    if (current !== tableName) continue;
+    Object.assign(result, parseAssignments(line));
+  }
+  return result;
+}
+
+function parseLockDocument(text) {
+  const source = String(text || "");
+  const [header, ...blocks] = source.split(/^\s*\[\[package\]\]\s*$/m);
+  const rootDependencies = tableAssignments(header, "root_dependencies");
+  const packages = blocks.map((block) => {
+    const result = { dependencies: {}, exports: {} };
+    let section = "package";
+    for (const line of block.split(/\r?\n/)) {
+      const heading = line.match(/^\s*\[package\.(dependencies|exports)\]\s*$/);
+      if (heading) {
+        section = heading[1];
+        continue;
       }
-      return result;
-    })
-    .filter((entry) => entry.name && entry.source && entry.entry);
+      const assignment = line.match(/^\s*["']?([^="']+?)["']?\s*=\s*(.+)$/);
+      if (!assignment) continue;
+      const key = assignment[1].trim();
+      const value = parseScalar(assignment[2]);
+      if (section === "package" && /^(id|name|version|source|revision|checksum|entry)$/.test(key)) {
+        result[key] = value;
+      } else if (section === "dependencies" || section === "exports") {
+        result[section][key] = value;
+      }
+    }
+    return result;
+  }).filter((entry) => entry.name && entry.source && entry.entry);
+  return { rootDependencies, packages };
+}
+
+function parseLock(text) {
+  return parseLockDocument(text).packages;
 }
 
 function sectionName(line) {
@@ -87,6 +128,22 @@ function packageEntry(manifest) {
   return "";
 }
 
+function packageExport(manifest, exportName) {
+  if (!exportName) return packageEntry(manifest);
+  let exportSection = false;
+  for (const line of String(manifest || "").split(/\r?\n/)) {
+    const section = sectionName(line);
+    if (section) {
+      exportSection = section === "导出" || section === "exports";
+      continue;
+    }
+    if (!exportSection) continue;
+    const match = line.match(/^\s*["']?([^="']+?)["']?\s*=\s*(.+)$/);
+    if (match && match[1].trim() === exportName) return parseScalar(match[2]);
+  }
+  return "";
+}
+
 function shortHash(value) {
   return crypto.createHash("sha256").update(value).digest("hex").slice(0, 24);
 }
@@ -114,7 +171,7 @@ function rootFromLocked(manifestRoot, locked) {
   return "";
 }
 
-async function resolveFromManifest(manifestPath, packageName) {
+async function resolveFromManifest(manifestPath, packageName, exportName) {
   const root = path.dirname(manifestPath);
   const manifest = await fs.readFile(manifestPath, "utf8");
   const relative = dependencyPath(manifest, packageName);
@@ -124,7 +181,9 @@ async function resolveFromManifest(manifestPath, packageName) {
   const dependencyRoot = dependencyStat?.isFile() ? path.dirname(resolvedDependencyPath) : resolvedDependencyPath;
   const dependencyManifestPath = path.join(dependencyRoot, MANIFEST_NAME);
   if (!await exists(dependencyManifestPath)) return undefined;
-  const entry = packageEntry(await fs.readFile(dependencyManifestPath, "utf8"));
+  const dependencyManifest = await fs.readFile(dependencyManifestPath, "utf8");
+  const entry = packageExport(dependencyManifest, exportName || "默认")
+    || (!exportName ? packageEntry(dependencyManifest) : "");
   if (!entry) return undefined;
   const candidate = path.join(dependencyRoot, entry);
   return await exists(candidate) ? candidate : undefined;
@@ -132,29 +191,40 @@ async function resolveFromManifest(manifestPath, packageName) {
 
 async function resolvePackageImport(currentFsPath, source) {
   if (!currentFsPath || !String(source).startsWith("包:")) return undefined;
-  const packageName = String(source).slice(2);
+  const [packageName, ...exportParts] = String(source).slice(2).split("/");
+  const exportName = exportParts.join("/");
   if (!packageName) return undefined;
   const manifestPath = await findUp(path.dirname(currentFsPath), MANIFEST_NAME);
   if (!manifestPath) return undefined;
   const root = path.dirname(manifestPath);
   const lockPath = path.join(root, LOCK_NAME);
   if (await exists(lockPath)) {
-    const locked = parseLock(await fs.readFile(lockPath, "utf8")).find((entry) => entry.name === packageName);
+    const lock = parseLockDocument(await fs.readFile(lockPath, "utf8"));
+    const lockedId = lock.rootDependencies[packageName];
+    const locked = lockedId
+      ? lock.packages.find((entry) => entry.id === lockedId)
+      : Object.keys(lock.rootDependencies).length === 0
+        ? lock.packages.find((entry) => entry.name === packageName)
+        : undefined;
     if (locked) {
       const resolvedRoot = rootFromLocked(root, locked);
       const resolvedStat = resolvedRoot && await fs.stat(resolvedRoot).catch(() => undefined);
       const packageRoot = resolvedStat?.isFile() ? path.dirname(resolvedRoot) : resolvedRoot;
-      const candidate = packageRoot && path.join(packageRoot, locked.entry);
+      const entry = exportName ? locked.exports?.[exportName] : locked.exports?.["默认"] || locked.entry;
+      const candidate = packageRoot && entry && path.join(packageRoot, entry);
       if (candidate && await exists(candidate)) return candidate;
+      return undefined;
     }
   }
-  return resolveFromManifest(manifestPath, packageName);
+  return resolveFromManifest(manifestPath, packageName, exportName);
 }
 
 module.exports = {
   dependencyPath,
   packageEntry,
+  packageExport,
   parseLock,
+  parseLockDocument,
   resolvePackageImport,
   rootFromLocked,
   shortHash,

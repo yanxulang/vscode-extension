@@ -83,7 +83,12 @@ if (!manifest.dependencies?.["pinyin-pro"]) {
   throw new Error("package.json 缺少拼音补全依赖");
 }
 const standardLibrary = JSON.parse(fs.readFileSync(path.join(root, "resources/standard-library.json"), "utf8"));
-if (!Array.isArray(standardLibrary.modules) || standardLibrary.modules.length < 23) {
+if (!Array.isArray(standardLibrary.modules) || standardLibrary.modules.length < 25) {
   throw new Error("内置标准库索引不完整");
+}
+for (const moduleName of ["进程", "资源"]) {
+  if (!standardLibrary.modules.some(({ name }) => name === moduleName)) {
+    throw new Error(`内置标准库索引缺少 ${moduleName} 模块`);
+  }
 }
 console.log("言序 VS Code 扩展结构有效。");

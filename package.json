@@ -1,8 +1,8 @@
 {
   "name": "yanxu-language",
   "displayName": "言序语言",
-  "description": "言序 VS Code 扩展 1.2.0：工作区与外部模块符号索引、标准库索引、拼音补全、语义 LSP、DAP 与格式化。",
-  "version": "1.2.0",
+  "description": "言序 VS Code 扩展 1.3.0：格式 2 包索引、25 模块标准库、YXB 构建、拼音补全、语义 LSP、DAP 与格式化。",
+  "version": "1.3.0",
   "publisher": "yanxulang",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -27,6 +27,7 @@
   "scripts": {
     "check": "node scripts/check.js",
     "test": "node --test tests/*.test.js",
+    "update-stdlib": "node scripts/update-standard-library.js",
     "build": "esbuild extension.js --bundle --external:vscode --format=cjs --platform=node --target=node18 --outfile=dist/extension.js",
     "vscode:prepublish": "npm run check && npm test && npm run build",
     "package": "vsce package"
@@ -106,6 +107,7 @@
       { "command": "yanxu.debugFile", "title": "跟踪当前文卷", "category": "言序" },
       { "command": "yanxu.migrateFile", "title": "迁移当前文卷", "category": "言序" },
       { "command": "yanxu.testWorkspace", "title": "运行工作区测试", "category": "言序" },
+      { "command": "yanxu.compileWorkspace", "title": "编译工作区 YXB 应用", "category": "言序" },
       { "command": "yanxu.openRepl", "title": "打开 REPL", "category": "言序" },
       { "command": "yanxu.restartLanguageServer", "title": "重启语言服务", "category": "言序" },
       { "command": "yanxu.rebuildIndex", "title": "重建符号索引", "category": "言序" },
@@ -131,7 +133,7 @@
         "properties": {
           "command": {
             "type": "string",
-            "enum": ["run", "check", "vm", "trace", "test", "migrate"],
+            "enum": ["run", "check", "vm", "trace", "test", "compile", "migrate"],
             "description": "要执行的言序任务。"
           },
           "target": {

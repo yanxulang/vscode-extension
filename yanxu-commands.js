@@ -12,6 +12,7 @@ const TASK_COMMANDS = Object.freeze({
   vm: { label: "使用 VM 运行文卷", prefix: ["字节"] },
   trace: { label: "跟踪文卷", prefix: ["调"] },
   test: { label: "运行工作区测试", prefix: ["试"] },
+  compile: { label: "编译工作区 YXB 应用", prefix: ["compile"] },
   migrate: { label: "迁移文卷", prefix: ["迁", "--写"] }
 });
 
