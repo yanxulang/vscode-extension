@@ -2,7 +2,8 @@ const FILE_COMMANDS = Object.freeze({
   "yanxu.runFile": { task: "run", label: "运行当前文卷" },
   "yanxu.checkFile": { task: "check", label: "检查当前文卷" },
   "yanxu.runVm": { task: "vm", label: "使用 VM 运行当前文卷" },
-  "yanxu.debugFile": { task: "trace", label: "跟踪当前文卷" }
+  "yanxu.debugFile": { task: "trace", label: "跟踪当前文卷" },
+  "yanxu.migrateFile": { task: "migrate", label: "迁移当前文卷" }
 });
 
 const TASK_COMMANDS = Object.freeze({
@@ -10,7 +11,8 @@ const TASK_COMMANDS = Object.freeze({
   check: { label: "检查文卷", prefix: ["查"] },
   vm: { label: "使用 VM 运行文卷", prefix: ["字节"] },
   trace: { label: "跟踪文卷", prefix: ["调"] },
-  test: { label: "运行工作区测试", prefix: ["试"] }
+  test: { label: "运行工作区测试", prefix: ["试"] },
+  migrate: { label: "迁移文卷", prefix: ["迁", "--写"] }
 });
 
 function taskArguments(command, target) {

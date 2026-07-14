@@ -7,6 +7,11 @@ const {
   fileArguments,
   taskArguments
 } = require("./yanxu-commands");
+const {
+  completionEntries,
+  lookupLanguageSymbol,
+  signatureAt
+} = require("./language-features");
 
 let client;
 let clientWatcher;
@@ -240,6 +245,109 @@ function createTaskProvider() {
   };
 }
 
+function createDebugConfigurationProvider() {
+  return {
+    provideDebugConfigurations() {
+      return [{
+        type: "yanxu",
+        request: "launch",
+        name: "调试当前言序文卷",
+        program: "${file}",
+        stopOnEntry: false
+      }];
+    },
+    resolveDebugConfiguration(_folder, config) {
+      if (!config.type && !config.request && !config.name) {
+        config.type = "yanxu";
+        config.request = "launch";
+        config.name = "调试当前言序文卷";
+        config.program = "${file}";
+      }
+      if (!config.program) {
+        const editor = activeYanxuEditor();
+        if (!editor || editor.document.isUntitled) return undefined;
+        config.program = editor.document.fileName;
+      }
+      return config;
+    }
+  };
+}
+
+function createDebugAdapterFactory() {
+  return {
+    createDebugAdapterDescriptor() {
+      return new vscode.DebugAdapterExecutable(executablePath(), ["调试服务"]);
+    }
+  };
+}
+
+function completionKind(kind) {
+  return {
+    keyword: vscode.CompletionItemKind.Keyword,
+    type: vscode.CompletionItemKind.Class,
+    function: vscode.CompletionItemKind.Function,
+    constant: vscode.CompletionItemKind.Constant,
+    module: vscode.CompletionItemKind.Module
+  }[kind] ?? vscode.CompletionItemKind.Text;
+}
+
+function languageDocumentation(entry) {
+  const markdown = new vscode.MarkdownString();
+  if (entry.signature) markdown.appendCodeblock(entry.signature, "yanxu");
+  else markdown.appendMarkdown(`**${entry.label}** — ${entry.detail}\n\n`);
+  markdown.appendMarkdown(entry.documentation);
+  return markdown;
+}
+
+function createCompletionProvider() {
+  return {
+    provideCompletionItems(document, position) {
+      if (client?.state === State.Running) return undefined;
+      const linePrefix = document.lineAt(position.line).text.slice(0, position.character);
+      return completionEntries(linePrefix).map((entry) => {
+        const item = new vscode.CompletionItem(entry.label, completionKind(entry.kind));
+        item.detail = entry.detail;
+        item.documentation = languageDocumentation(entry);
+        item.sortText = `${entry.kind === "function" ? "1" : "2"}-${entry.label}`;
+        if (entry.insertText) item.insertText = new vscode.SnippetString(entry.insertText);
+        return item;
+      });
+    }
+  };
+}
+
+function createHoverProvider() {
+  return {
+    provideHover(document, position) {
+      const range = document.getWordRangeAtPosition(
+        position,
+        /[^\s（）()【】\[\]{}，,:：.；;"“”「」]+/
+      );
+      if (!range) return undefined;
+      const entry = lookupLanguageSymbol(document.getText(range));
+      return entry ? new vscode.Hover(languageDocumentation(entry), range) : undefined;
+    }
+  };
+}
+
+function createSignatureHelpProvider() {
+  return {
+    provideSignatureHelp(document, position) {
+      const start = new vscode.Position(Math.max(0, position.line - 20), 0);
+      const entry = signatureAt(document.getText(new vscode.Range(start, position)));
+      if (!entry) return undefined;
+
+      const signature = new vscode.SignatureInformation(entry.signature, entry.documentation);
+      signature.parameters = entry.parameters.map((parameter) => new vscode.ParameterInformation(parameter));
+      const help = new vscode.SignatureHelp();
+      help.signatures = [signature];
+      help.activeSignature = 0;
+      help.activeParameter = entry.activeParameter;
+      return help;
+    }
+  };
+}
+
 async function activate(context) {
   languageOutput = vscode.window.createOutputChannel("言序语言服务");
   languageStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 20);
@@ -258,10 +366,23 @@ async function activate(context) {
       }
     }),
     vscode.tasks.registerTaskProvider("yanxu", createTaskProvider()),
+    vscode.debug.registerDebugConfigurationProvider("yanxu", createDebugConfigurationProvider()),
+    vscode.debug.registerDebugAdapterDescriptorFactory("yanxu", createDebugAdapterFactory()),
+    vscode.languages.registerCompletionItemProvider("yanxu", createCompletionProvider(), "：", ":", "|"),
+    vscode.languages.registerHoverProvider("yanxu", createHoverProvider()),
+    vscode.languages.registerSignatureHelpProvider(
+      "yanxu",
+      createSignatureHelpProvider(),
+      "（",
+      "(",
+      "，",
+      ","
+    ),
     vscode.commands.registerCommand("yanxu.runFile", () => executeFileCommand("yanxu.runFile")),
     vscode.commands.registerCommand("yanxu.checkFile", () => executeFileCommand("yanxu.checkFile")),
     vscode.commands.registerCommand("yanxu.runVm", () => executeFileCommand("yanxu.runVm")),
     vscode.commands.registerCommand("yanxu.debugFile", () => executeFileCommand("yanxu.debugFile")),
+    vscode.commands.registerCommand("yanxu.migrateFile", () => executeFileCommand("yanxu.migrateFile")),
     vscode.commands.registerCommand("yanxu.runSelection", runSelection),
     vscode.commands.registerCommand("yanxu.formatFile", () => vscode.commands.executeCommand("editor.action.formatDocument")),
     vscode.commands.registerCommand("yanxu.testWorkspace", testWorkspace),

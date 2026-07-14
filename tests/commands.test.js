@@ -7,6 +7,7 @@ test("文件命令映射到 0.7 CLI", () => {
   assert.deepEqual(fileArguments("yanxu.checkFile", "/tmp/示例.yx"), ["查", "/tmp/示例.yx"]);
   assert.deepEqual(fileArguments("yanxu.runVm", "/tmp/示例.yx"), ["字节", "/tmp/示例.yx"]);
   assert.deepEqual(fileArguments("yanxu.debugFile", "/tmp/示例.yx"), ["调", "/tmp/示例.yx"]);
+  assert.deepEqual(fileArguments("yanxu.migrateFile", "/tmp/示例.yx"), ["迁", "--写", "/tmp/示例.yx"]);
 });
 
 test("工作区测试命令保留目标目录", () => {

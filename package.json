@@ -1,10 +1,15 @@
 {
   "name": "yanxu-language",
   "displayName": "言序语言",
-  "description": "言序 0.7 的官方 VS Code 支持：语法高亮、LSP、格式化与运行命令。",
-  "version": "0.7.0",
+  "description": "言序 0.7 的官方 VS Code 支持：语义 LSP、DAP 调试、格式化与运行命令。",
+  "version": "0.7.1",
   "publisher": "yanxulang",
   "license": "MIT",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#4F46E5",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -55,6 +60,42 @@
         "path": "./snippets/yanxu.json"
       }
     ],
+    "breakpoints": [
+      { "language": "yanxu" }
+    ],
+    "debuggers": [
+      {
+        "type": "yanxu",
+        "label": "言序",
+        "languages": ["yanxu"],
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "要调试的 .yx 文卷。",
+                "default": "${file}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "是否在第一条语句执行前暂停。",
+                "default": false
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "yanxu",
+            "request": "launch",
+            "name": "调试当前言序文卷",
+            "program": "${file}",
+            "stopOnEntry": false
+          }
+        ]
+      }
+    ],
     "commands": [
       { "command": "yanxu.runFile", "title": "运行当前文卷", "category": "言序", "icon": "$(play)" },
       { "command": "yanxu.runSelection", "title": "在 REPL 中运行选区或当前行", "category": "言序" },
@@ -62,6 +103,7 @@
       { "command": "yanxu.runVm", "title": "使用 VM 运行当前文卷", "category": "言序" },
       { "command": "yanxu.formatFile", "title": "格式化当前文卷", "category": "言序" },
       { "command": "yanxu.debugFile", "title": "跟踪当前文卷", "category": "言序" },
+      { "command": "yanxu.migrateFile", "title": "迁移当前文卷", "category": "言序" },
       { "command": "yanxu.testWorkspace", "title": "运行工作区测试", "category": "言序" },
       { "command": "yanxu.openRepl", "title": "打开 REPL", "category": "言序" },
       { "command": "yanxu.restartLanguageServer", "title": "重启语言服务", "category": "言序" },
@@ -76,7 +118,8 @@
       "editor/context": [
         { "command": "yanxu.runSelection", "when": "editorLangId == yanxu", "group": "yanxu@1" },
         { "command": "yanxu.runFile", "when": "editorLangId == yanxu", "group": "yanxu@2" },
-        { "command": "yanxu.checkFile", "when": "editorLangId == yanxu", "group": "yanxu@3" }
+        { "command": "yanxu.checkFile", "when": "editorLangId == yanxu", "group": "yanxu@3" },
+        { "command": "yanxu.migrateFile", "when": "editorLangId == yanxu", "group": "yanxu@4" }
       ]
     },
     "taskDefinitions": [
@@ -86,7 +129,7 @@
         "properties": {
           "command": {
             "type": "string",
-            "enum": ["run", "check", "vm", "trace", "test"],
+            "enum": ["run", "check", "vm", "trace", "test", "migrate"],
             "description": "要执行的言序任务。"
           },
           "target": {
@@ -96,6 +139,14 @@
         }
       }
     ],
+    "configurationDefaults": {
+      "[yanxu]": {
+        "editor.autoIndent": "full",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.wordBasedSuggestions": "matchingDocuments"
+      }
+    },
     "configuration": {
       "title": "言序",
       "properties": {
