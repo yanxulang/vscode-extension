@@ -41,7 +41,7 @@
       ]
     },
     "keywords": { "patterns": [{ "name": "keyword.control.yanxu", "match": "\\b(?:公|私|只|静|令|定|置|为|言|若|则|否则|终|当|逐|于|异|候|法|类|承|父|协|纳|域|引|作|归|试|救|抛)\\b" }] },
-    "types": { "patterns": [{ "name": "support.type.yanxu", "match": "(?<=[：:|<，,])\\s*(?:数|文|理|空|法|类|对象|模块|列|元|典|遍器|任务|协|误|任意)\\b" }] },
+    "types": { "patterns": [{ "name": "support.type.yanxu", "match": "(?<=[：:|<，,])\\s*(?:数|文|理|空|法|类|对象|模块|列|元|典|遍器|任务|协|误|套接字|任意)\\b" }] },
     "constants": { "patterns": [{ "name": "constant.language.yanxu", "match": "\\b(?:真|假|空|此)\\b" }] },
     "builtins": { "patterns": [{ "name": "support.function.builtin.yanxu", "match": "\\b(?:时刻|长度|类型|追加|弹出|有键|插入|删除|键列|值列|遍|续|范围|步进范围|映射|筛选|折叠|排序|反转|包含|寻找|取消|任务状态|并候|绝对值|平方根|幂)(?=\\s*[（(])" }] },
     "operators": { "patterns": [{ "name": "keyword.operator.yanxu", "match": "(?:不小于|大于等于|不大于|小于等于|不等于|等于|大于|小于|是|加|减|乘|除|且|或|非|==|!=|>=|<=|>|<|\\+|-|\\*|/|×|÷|!)" }] },

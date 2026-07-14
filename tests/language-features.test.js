@@ -26,12 +26,13 @@ test("类型标注位置只提供类型补全", () => {
 
 test("标准库路径位置提供模块补全", () => {
   const entries = completionEntries("引「标准:");
-  assert.equal(entries.length, 21);
+  assert.equal(entries.length, 22);
   assert.ok(entries.some(({ label }) => label === "JSON"));
   assert.ok(entries.some(({ label }) => label === "标识"));
   for (const label of ["Base64", "正则", "URL", "日期"]) {
     assert.ok(entries.some((entry) => entry.label === label));
   }
+  assert.ok(entries.some(({ label }) => label === "套接字"));
 });
 
 test("签名提示识别参数位置与嵌套调用", () => {
@@ -47,4 +48,5 @@ test("悬停词典包含文档和函数签名", () => {
   assert.match(lookupLanguageSymbol("范围").signature, /范围（起：数/);
   assert.match(lookupLanguageSymbol("父").documentation, /父类方法/);
   assert.match(lookupLanguageSymbol("是").documentation, /类型/);
+  assert.match(lookupLanguageSymbol("套接字").documentation, /TCP\/UDP/);
 });
