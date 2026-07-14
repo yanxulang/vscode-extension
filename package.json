@@ -1,8 +1,8 @@
 {
   "name": "yanxu-language",
   "displayName": "言序语言",
-  "description": "言序 1.1 的官方 VS Code 支持：语义 LSP、DAP 调试、格式化、任务与迁移命令。",
-  "version": "1.1.0",
+  "description": "言序 1.1.1 的官方 VS Code 支持：对象继承、类型判断、语义 LSP、DAP 调试与格式化。",
+  "version": "1.1.1",
   "publisher": "yanxulang",
   "license": "MIT",
   "icon": "images/icon.png",

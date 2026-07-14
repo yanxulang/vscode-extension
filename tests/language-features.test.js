@@ -14,6 +14,8 @@ test("普通位置提供关键字、类型与内建函数补全", () => {
   assert.ok(labels.includes("候"));
   assert.ok(labels.includes("任务"));
   assert.ok(labels.includes("并候"));
+  assert.ok(labels.includes("父"));
+  assert.ok(labels.includes("是"));
 });
 
 test("类型标注位置只提供类型补全", () => {
@@ -43,4 +45,6 @@ test("签名提示识别参数位置与嵌套调用", () => {
 test("悬停词典包含文档和函数签名", () => {
   assert.equal(lookupLanguageSymbol("若").documentation, "开始条件分支");
   assert.match(lookupLanguageSymbol("范围").signature, /范围（起：数/);
+  assert.match(lookupLanguageSymbol("父").documentation, /父类方法/);
+  assert.match(lookupLanguageSymbol("是").documentation, /类型/);
 });
