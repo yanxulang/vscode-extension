@@ -21,17 +21,37 @@
     { "open": "“", "close": "”", "notIn": ["string", "comment"] },
     { "open": "\"", "close": "\"", "notIn": ["string", "comment"] }
   ],
+  "autoCloseBefore": "；;，,：:. \n\t)}]】〉》」”",
   "surroundingPairs": [
     ["（", "）"], ["(", ")"], ["【", "】"], ["[", "]"], ["{", "}"], ["「", "」"], ["“", "”"], ["\"", "\""]
   ],
+  "colorizedBracketPairs": [
+    ["（", "）"], ["(", ")"], ["【", "】"], ["[", "]"], ["{", "}"]
+  ],
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(?:类|法|若|否则|当|逐|试|救)\\b.*(?:则)?\\s*$",
-    "decreaseIndentPattern": "^\\s*(?:否则|终)\\b"
+    "increaseIndentPattern": "^\\s*(?:(?:公|私|静|只|异)\\s+)*(?:类|协|法|若|否则|当|逐|试|救)(?=\\s|$).*(?:则)?\\s*(?://.*)?$",
+    "decreaseIndentPattern": "^\\s*(?:否则|救(?:\\s+.*)?|终)(?=\\s|$)",
+    "unIndentedLinePattern": "^\\s*(?://.*)?$"
   },
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*(?:(?:公|私|静|只|异)\\s+)*(?:类|协|法|若|否则|当|逐|试|救)(?=\\s|$).*(?:则)?\\s*$",
+      "afterText": "^\\s*终(?=\\s|$)",
+      "action": { "indent": "indentOutdent" }
+    },
+    {
+      "beforeText": "^\\s*(?:(?:公|私|静|只|异)\\s+)*(?:类|协|法|若|否则|当|逐|试|救)(?=\\s|$).*(?:则)?\\s*$",
+      "action": { "indent": "indent" }
+    },
+    {
+      "beforeText": "^\\s*///.*$",
+      "action": { "indent": "none", "appendText": "/// " }
+    }
+  ],
   "folding": {
     "markers": {
-      "start": "^\\s*(?:类|法|若|当|逐|试)\\b",
-      "end": "^\\s*终\\b"
+      "start": "^\\s*(?:(?:公|私|静|只|异)\\s+)*(?:类|协|法|若|当|逐|试)(?=\\s|$)",
+      "end": "^\\s*终(?=\\s|$)"
     }
   },
   "wordPattern": "([^\\s（）()【】\\[\\]{}，,:：.；;＋+－＊*×／/÷！!=<>\\\"“”「」#-]+)"
