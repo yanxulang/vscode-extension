@@ -24,9 +24,12 @@ test("类型标注位置只提供类型补全", () => {
 
 test("标准库路径位置提供模块补全", () => {
   const entries = completionEntries("引「标准:");
-  assert.equal(entries.length, 17);
+  assert.equal(entries.length, 21);
   assert.ok(entries.some(({ label }) => label === "JSON"));
   assert.ok(entries.some(({ label }) => label === "标识"));
+  for (const label of ["Base64", "正则", "URL", "日期"]) {
+    assert.ok(entries.some((entry) => entry.label === label));
+  }
 });
 
 test("签名提示识别参数位置与嵌套调用", () => {

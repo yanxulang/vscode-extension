@@ -65,7 +65,7 @@ const BUILTINS = [
 
 const STANDARD_MODULES = [
   "文字", "数学", "时间", "文件", "JSON", "网络", "测试", "路径", "环境", "哈希", "编码", "统计", "CSV",
-  "随机", "标识", "模板", "校验"
+  "随机", "标识", "模板", "校验", "Base64", "正则", "URL", "日期"
 ].map((label) => ({
   label,
   kind: "module",
