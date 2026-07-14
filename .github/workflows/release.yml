@@ -4,9 +4,28 @@ on:
   push:
     tags:
       - "v[0-9]+.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 已存在的版本标签（如 v1.0.0）
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        description: 已存在的版本标签
+        required: true
+        type: string
+    secrets:
+      VSCE_PAT:
+        required: false
 
 permissions:
   contents: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -15,29 +34,72 @@ jobs:
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref_name }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
-      - run: npm run vscode:prepublish
-      - name: 校验标签并打包
-        id: package
+      - name: 校验标签与版本文件
+        id: version
         shell: bash
+        env:
+          REQUESTED_TAG: ${{ inputs.tag }}
         run: |
+          set -euo pipefail
+          tag="${REQUESTED_TAG:-$GITHUB_REF_NAME}"
           version="$(node -p 'require("./package.json").version')"
-          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
-            echo "标签 $GITHUB_REF_NAME 与 package.json 版本 $version 不一致" >&2
+          lock_version="$(node -p 'require("./package-lock.json").version')"
+          if [[ "$tag" != "v$version" ]]; then
+            echo "标签 $tag 与 package.json 版本 $version 不一致" >&2
             exit 1
           fi
-          vsix="yanxu-language-$version.vsix"
+          if [[ "$lock_version" != "$version" ]]; then
+            echo "package-lock.json 版本 $lock_version 与 package.json 不一致" >&2
+            exit 1
+          fi
+          git fetch origin main --tags
+          tag_commit="$(git rev-list -n 1 "$tag")"
+          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
+            echo "标签 $tag 不属于 origin/main" >&2
+            exit 1
+          fi
+          if ! grep -Fqx "## $version" CHANGELOG.md; then
+            echo "CHANGELOG.md 缺少 ## $version" >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - run: npm ci
+      - run: npm run vscode:prepublish
+      - name: 打包 VSIX
+        id: package
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          vsix="yanxu-language-$VERSION.vsix"
           npx vsce package --out "$vsix"
           echo "vsix=$vsix" >> "$GITHUB_OUTPUT"
-      - name: 创建 GitHub Release 并上传 VSIX
+      - name: 创建或更新 GitHub Release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
           VSIX: ${{ steps.package.outputs.vsix }}
-        run: gh release create "$GITHUB_REF_NAME" "$VSIX" --verify-tag --generate-notes --title "言序 VS Code $GITHUB_REF_NAME"
+        run: |
+          awk -v heading="## $VERSION" '
+            $0 == heading { capture = 1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$VSIX" --clobber
+          else
+            gh release create "$TAG" "$VSIX" --verify-tag --notes-file release-notes.md --title "言序 VS Code $TAG"
+          fi
       - name: 发布到 VS Code Marketplace
         if: env.VSCE_PAT != ''
         env:

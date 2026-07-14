@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { FILE_COMMANDS, TASK_COMMANDS, fileArguments, taskArguments } = require("../yanxu-commands");
 
-test("文件命令映射到 0.7 CLI", () => {
+test("文件命令映射到 1.0 CLI", () => {
   assert.deepEqual(fileArguments("yanxu.runFile", "/tmp/示例.yx"), ["/tmp/示例.yx"]);
   assert.deepEqual(fileArguments("yanxu.checkFile", "/tmp/示例.yx"), ["查", "/tmp/示例.yx"]);
   assert.deepEqual(fileArguments("yanxu.runVm", "/tmp/示例.yx"), ["字节", "/tmp/示例.yx"]);
