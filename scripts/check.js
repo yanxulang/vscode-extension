@@ -83,8 +83,11 @@ if (!manifest.dependencies?.["pinyin-pro"]) {
   throw new Error("package.json 缺少拼音补全依赖");
 }
 const standardLibrary = JSON.parse(fs.readFileSync(path.join(root, "resources/standard-library.json"), "utf8"));
-if (!Array.isArray(standardLibrary.modules) || standardLibrary.modules.length < 25) {
+if (!Array.isArray(standardLibrary.modules) || standardLibrary.modules.length !== 25) {
   throw new Error("内置标准库索引不完整");
+}
+if (standardLibrary.coreVersion !== "1.1.6") {
+  throw new Error(`内置标准库索引对应 ${standardLibrary.coreVersion || "未知"}，预期言序 1.1.6`);
 }
 for (const moduleName of ["进程", "资源"]) {
   if (!standardLibrary.modules.some(({ name }) => name === moduleName)) {

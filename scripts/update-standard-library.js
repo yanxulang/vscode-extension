@@ -10,6 +10,10 @@ const output = execFileSync(executable, ["标准库", "--json"], {
   maxBuffer: 8 * 1024 * 1024,
 });
 const catalog = JSON.parse(output);
+const version = JSON.parse(execFileSync(executable, ["version", "--json"], {
+  encoding: "utf8",
+  maxBuffer: 1024 * 1024,
+}));
 
 if (!Array.isArray(catalog.modules)) {
   throw new Error("标准库命令没有返回 modules 数组");
@@ -17,6 +21,7 @@ if (!Array.isArray(catalog.modules)) {
 
 const normalized = {
   generatedAt: new Date().toISOString(),
+  coreVersion: String(version.version || ""),
   modules: catalog.modules.map((module) => ({
     name: String(module.name),
     description: module.description ? String(module.description) : "",

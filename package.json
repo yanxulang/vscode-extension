@@ -1,8 +1,8 @@
 {
   "name": "yanxu-language",
   "displayName": "言序语言",
-  "description": "言序 VS Code 扩展 1.3.1：格式 2 包索引、25 模块标准库、YXB 构建、拼音补全、语义 LSP、DAP 与格式化。",
-  "version": "1.3.1",
+  "description": "言序 VS Code 扩展 1.3.2：同步言序 1.1.6 的 25 模块标准库、YXB 安全模型、格式 2 包索引、语义 LSP、DAP 与格式化。",
+  "version": "1.3.2",
   "publisher": "yanxulang",
   "license": "MIT",
   "icon": "images/icon.png",
