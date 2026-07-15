@@ -145,6 +145,24 @@ async function compileWorkspace() {
   );
 }
 
+async function compileBundle() {
+  const uri = vscode.window.activeTextEditor?.document.uri;
+  const root = (uri && vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath)
+    ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!root) {
+    vscode.window.showWarningMessage("请先打开一个言窗 GUI 包工作区。");
+    return;
+  }
+  await vscode.tasks.executeTask(
+    createTask(
+      { type: "yanxu", command: "bundle", target: root },
+      "言序：构建发布版桌面应用 Bundle",
+      taskArguments("bundle", root),
+      root
+    )
+  );
+}
+
 function updateLanguageStatus(state, detail) {
   if (!languageStatus) return;
   const states = {
@@ -271,7 +289,7 @@ function createTaskProvider() {
       const file = "${file}";
       const root = "${workspaceFolder}";
       return Object.entries(TASK_COMMANDS).map(([command, spec]) => {
-        const target = command === "test" || command === "compile" ? root : file;
+        const target = ["test", "compile", "bundle"].includes(command) ? root : file;
         return createTask(
           { type: "yanxu", command },
           `言序：${spec.label}`,
@@ -285,7 +303,7 @@ function createTaskProvider() {
       const spec = TASK_COMMANDS[command];
       if (!spec) return undefined;
       const target = task.definition.target
-        ?? (command === "test" || command === "compile" ? "${workspaceFolder}" : "${file}");
+        ?? (["test", "compile", "bundle"].includes(command) ? "${workspaceFolder}" : "${file}");
       return createTask(task.definition, task.name || `言序：${spec.label}`, taskArguments(command, target), "${workspaceFolder}");
     }
   };
@@ -581,6 +599,7 @@ async function activate(context) {
     vscode.commands.registerCommand("yanxu.formatFile", () => vscode.commands.executeCommand("editor.action.formatDocument")),
     vscode.commands.registerCommand("yanxu.testWorkspace", testWorkspace),
     vscode.commands.registerCommand("yanxu.compileWorkspace", compileWorkspace),
+    vscode.commands.registerCommand("yanxu.compileBundle", compileBundle),
     vscode.commands.registerCommand("yanxu.openRepl", openRepl),
     vscode.commands.registerCommand("yanxu.restartLanguageServer", restartLanguageServer),
     vscode.commands.registerCommand("yanxu.rebuildIndex", async () => {

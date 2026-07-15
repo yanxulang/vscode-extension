@@ -13,13 +13,14 @@ const TASK_COMMANDS = Object.freeze({
   trace: { label: "跟踪文卷", prefix: ["调"] },
   test: { label: "运行工作区测试", prefix: ["试"] },
   compile: { label: "编译工作区 YXB 应用", prefix: ["compile"] },
+  bundle: { label: "构建发布版桌面应用 Bundle", prefix: ["compile"], suffix: ["--release", "--bundle"] },
   migrate: { label: "迁移文卷", prefix: ["迁", "--写"] }
 });
 
 function taskArguments(command, target) {
   const spec = TASK_COMMANDS[command];
   if (!spec) throw new Error(`未知言序任务：${command}`);
-  return [...spec.prefix, target];
+  return [...spec.prefix, target, ...(spec.suffix ?? [])];
 }
 
 function fileArguments(commandId, file) {
