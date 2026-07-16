@@ -11,7 +11,9 @@
     { "include": "#types" },
     { "include": "#constants" },
     { "include": "#builtins" },
+    { "include": "#calls" },
     { "include": "#operators" },
+    { "include": "#punctuation" },
     { "include": "#members" }
   ],
   "repository": {
@@ -28,23 +30,66 @@
         { "name": "string.quoted.double.yanxu", "begin": "\"", "end": "\"", "patterns": [{ "include": "#escapes" }] }
       ]
     },
-    "escapes": { "patterns": [{ "name": "constant.character.escape.yanxu", "match": "\\\\[ntr\\\"\\\\]" }] },
-    "numbers": { "patterns": [{ "name": "constant.numeric.yanxu", "match": "(?<![^\\s（(，,:：；;])\\d+(?:\\.\\d+)?" }] },
-    "declarations": {
+    "escapes": {
       "patterns": [
-        { "match": "\\b(法)(\\s+)([^\\s（(，,:：.；;]+)", "captures": { "1": { "name": "storage.type.function.yanxu" }, "3": { "name": "entity.name.function.yanxu" } } },
-        { "match": "\\b(类)(\\s+)([^\\s（(，,:：.；;]+)", "captures": { "1": { "name": "storage.type.class.yanxu" }, "3": { "name": "entity.name.type.class.yanxu" } } },
-        { "match": "\\b(协)(\\s+)([^\\s（(，,:：.；;]+)", "captures": { "1": { "name": "storage.type.interface.yanxu" }, "3": { "name": "entity.name.type.interface.yanxu" } } },
-        { "match": "\\b(域)(\\s+)([^\\s（(，,:：.；;]+)", "captures": { "1": { "name": "storage.type.property.yanxu" }, "3": { "name": "variable.other.member.yanxu" } } },
-        { "match": "\\b(令|定)(\\s+)([^\\s（(【\\[，,:：.；;]+)", "captures": { "1": { "name": "storage.type.variable.yanxu" }, "3": { "name": "variable.other.readwrite.yanxu" } } },
-        { "match": "\\b(引)(?=\\s*[「“\"])", "captures": { "1": { "name": "keyword.control.import.yanxu" } } }
+        { "name": "constant.character.escape.yanxu", "match": "\\\\[ntr\"\\\\]" }
       ]
     },
-    "keywords": { "patterns": [{ "name": "keyword.control.yanxu", "match": "\\b(?:公|私|只|静|令|定|置|为|言|若|则|否则|终|当|逐|于|异|候|法|类|承|父|协|纳|域|引|作|归|试|救|抛)\\b" }] },
-    "types": { "patterns": [{ "name": "support.type.yanxu", "match": "(?<=[：:|<，,])\\s*(?:数|文|字节串|理|空|法|类|对象|模块|列|元|典|遍器|任务|协|误|套接字|任意)\\b" }] },
-    "constants": { "patterns": [{ "name": "constant.language.yanxu", "match": "\\b(?:真|假|空|此)\\b" }] },
-    "builtins": { "patterns": [{ "name": "support.function.builtin.yanxu", "match": "\\b(?:时刻|长度|类型|追加|弹出|有键|插入|删除|键列|值列|遍|续|范围|步进范围|映射|筛选|折叠|排序|反转|包含|寻找|取消|任务状态|并候|绝对值|平方根|幂)(?=\\s*[（(])" }] },
-    "operators": { "patterns": [{ "name": "keyword.operator.yanxu", "match": "(?:不小于|大于等于|不大于|小于等于|不等于|等于|大于|小于|是|加|减|乘|除|且|或|非|==|!=|>=|<=|>|<|\\+|-|\\*|/|×|÷|!)" }] },
-    "members": { "patterns": [{ "name": "variable.other.property.yanxu", "match": "(?<=\\.)[^\\s（(，,:：.；;]+" }] }
+    "numbers": {
+      "patterns": [
+        { "name": "constant.numeric.yanxu", "match": "(?<![\\p{L}\\p{N}_])\\d+(?:\\.\\d+)?(?![\\p{L}\\p{N}_])" }
+      ]
+    },
+    "declarations": {
+      "patterns": [
+        { "match": "(?<![\\p{L}\\p{N}_])(法)(\\s+)([^\\s（(，,:：.；;]+)", "captures": { "1": { "name": "storage.type.function.yanxu" }, "3": { "name": "entity.name.function.yanxu" } } },
+        { "match": "(?<![\\p{L}\\p{N}_])(类)(\\s+)([^\\s（(，,:：.；;]+)", "captures": { "1": { "name": "storage.type.class.yanxu" }, "3": { "name": "entity.name.type.class.yanxu" } } },
+        { "match": "(?<![\\p{L}\\p{N}_])(协)(\\s+)([^\\s（(，,:：.；;]+)", "captures": { "1": { "name": "storage.type.interface.yanxu" }, "3": { "name": "entity.name.type.interface.yanxu" } } },
+        { "match": "(?<![\\p{L}\\p{N}_])(域)(\\s+)([^\\s（(，,:：.；;]+)", "captures": { "1": { "name": "storage.type.property.yanxu" }, "3": { "name": "variable.other.member.yanxu" } } },
+        { "match": "(?<![\\p{L}\\p{N}_])(令|定)(\\s+)([^\\s（(【\\[，,:：.；;]+)", "captures": { "1": { "name": "storage.type.variable.yanxu" }, "3": { "name": "variable.other.readwrite.yanxu" } } },
+        { "match": "(?<![\\p{L}\\p{N}_])(引)(?=\\s*[「“\"])", "captures": { "1": { "name": "keyword.control.import.yanxu" } } }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        { "name": "keyword.control.yanxu", "match": "(?<![\\p{L}\\p{N}_])(?:公|私|只|静|令|定|置|为|言|若|则|否则|终|当|逐|于|异|候|法|类|承|父|协|纳|域|引|作|归|试|救|抛)(?![\\p{L}\\p{N}_])" }
+      ]
+    },
+    "types": {
+      "patterns": [
+        { "name": "support.type.yanxu", "match": "(?<=[：:|<，,])\\s*(?:数|文|字节串|理|空|法|类|对象|模块|列|元|典|遍器|任务|协|误|套接字|任意)(?![\\p{L}\\p{N}_])" },
+        { "name": "support.type.yanxu", "match": "(?<=是)\\s*(?:数|文|字节串|理|空|法|类|对象|模块|列|元|典|遍器|任务|协|误|套接字|任意)(?![\\p{L}\\p{N}_])" }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        { "name": "constant.language.yanxu", "match": "(?<![\\p{L}\\p{N}_])(?:真|假|空|此)(?![\\p{L}\\p{N}_])" }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        { "name": "support.function.builtin.yanxu", "match": "(?<![\\p{L}\\p{N}_])(?:时刻|长度|类型|追加|弹出|有键|插入|删除|键列|值列|遍|续|范围|步进范围|映射|筛选|折叠|排序|反转|包含|寻找|取消|任务状态|并候|绝对值|平方根|幂)(?=\\s*[（(])" }
+      ]
+    },
+    "calls": {
+      "patterns": [
+        { "name": "entity.name.function.call.yanxu", "match": "(?<![\\p{L}\\p{N}_])[^\\s（(）)【\\]，,:：.；;{}]+(?=\\s*[（(])" }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        { "name": "keyword.operator.yanxu", "match": "(?<![\\p{L}\\p{N}_])(?:不小于|大于等于|不大于|小于等于|不等于|等于|大于|小于|是|加|减|乘|除|且|或|非)(?![\\p{L}\\p{N}_])|==|!=|>=|<=|>|<|\\+|-|\\*|/|×|÷|!" }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        { "name": "punctuation.yanxu", "match": "[（）()【】\\[\\]{}，,:：；;.|?？]" }
+      ]
+    },
+    "members": {
+      "patterns": [
+        { "name": "variable.other.property.yanxu", "match": "(?<=\\.)[^\\s（(）)【\\]，,:：.；;{}]+" }
+      ]
+    }
   }
 }
