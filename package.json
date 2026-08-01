@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@vscode/vsce": "^3.6.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.1",
     "shiki": "^4.3.1"
   },
   "contributes": {
