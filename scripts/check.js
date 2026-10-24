@@ -53,31 +53,61 @@ for (const items of Object.values(manifest.contributes.menus ?? {})) {
     if (!commands.includes(item.command)) throw new Error(`菜单引用了未声明命令：${item.command}`);
   }
 }
+for (const binding of manifest.contributes.keybindings ?? []) {
+  if (!commands.includes(binding.command)) throw new Error(`快捷键引用了未声明命令：${binding.command}`);
+}
 
-const extensionEntry = path.join(root, "extension.js");
-execFileSync(process.execPath, ["--check", extensionEntry], { stdio: "inherit" });
-const extensionSource = fs.readFileSync(extensionEntry, "utf8");
+const sourceFiles = fs.readdirSync(root).filter((name) => name.endsWith(".js"));
+if (!sourceFiles.includes("extension.js")) throw new Error("缺少扩展入口");
+const source = sourceFiles.map((name) => fs.readFileSync(path.join(root, name), "utf8")).join("\n");
+for (const file of sourceFiles) {
+  execFileSync(process.execPath, ["--check", path.join(root, file)], { stdio: "inherit" });
+}
 for (const command of commands) {
-  if (!extensionSource.includes(`registerCommand(\"${command}\"`)) {
+  if (!source.includes(`registerCommand("${command}"`)) {
     throw new Error(`扩展入口未注册命令：${command}`);
   }
 }
-if (!extensionSource.includes('registerDebugAdapterDescriptorFactory("yanxu"')) {
+if (!source.includes('registerDebugAdapterDescriptorFactory("yanxu"')) {
   throw new Error("扩展入口未注册言序调试适配器");
+}
+if (!source.includes('registerTerminalProfileProvider("yanxu.repl"')) {
+  throw new Error("扩展入口未注册言序 REPL 终端配置");
 }
 for (const provider of [
   "registerCompletionItemProvider",
   "registerHoverProvider",
   "registerSignatureHelpProvider",
   "registerDefinitionProvider",
-  "registerWorkspaceSymbolProvider"
+  "registerWorkspaceSymbolProvider",
+  "registerDocumentLinkProvider",
+  "registerCodeLensProvider",
+  "registerCodeActionsProvider"
 ]) {
-  if (!extensionSource.includes(`vscode.languages.${provider}`)) {
+  if (!source.includes(`vscode.languages.${provider}`)) {
     throw new Error(`扩展入口未注册语言功能：${provider}`);
   }
 }
-if (!extensionSource.includes('registerTextDocumentContentProvider("yanxu-stdlib"')) {
+if (!source.includes('registerTextDocumentContentProvider("yanxu-stdlib"')) {
   throw new Error("扩展入口未注册标准库虚拟文卷提供器");
+}
+if (!source.includes('createTestController("yanxu"')) {
+  throw new Error("扩展入口未注册规格测试控制器");
+}
+const { DIAGNOSTIC_PATTERNS } = require(path.join(root, "diagnostics.js"));
+const matchers = Object.fromEntries((manifest.contributes.problemMatchers ?? []).map((matcher) => [matcher.name, matcher]));
+const span = matchers.yanxu?.pattern;
+const deprecation = matchers["yanxu-deprecation"]?.pattern;
+if (!Array.isArray(span) || span[0]?.regexp !== DIAGNOSTIC_PATTERNS.span.message || span[1]?.regexp !== DIAGNOSTIC_PATTERNS.span.location) {
+  throw new Error("言序诊断问题匹配器与 diagnostics.js 不一致");
+}
+if (deprecation?.regexp !== DIAGNOSTIC_PATTERNS.deprecation) {
+  throw new Error("言序弃用问题匹配器与 diagnostics.js 不一致");
+}
+const taskCommands = new Set(manifest.contributes.taskDefinitions?.find((item) => item.type === "yanxu")?.properties?.command?.enum ?? []);
+const { TASK_COMMANDS } = require(path.join(root, "yanxu-commands.js"));
+for (const command of Object.keys(TASK_COMMANDS)) {
+  if (!taskCommands.has(command)) throw new Error(`任务定义缺少 ${command}`);
 }
 if (!manifest.dependencies?.["pinyin-pro"]) {
   throw new Error("package.json 缺少拼音补全依赖");

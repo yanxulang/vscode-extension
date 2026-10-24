@@ -1,11 +1,20 @@
 {
   "name": "yanxu-language",
   "displayName": "言序语言",
-  "description": "言序 VS Code 扩展 1.4.0：同步言序 1.1.7、ABI v2、言窗包补全和跨平台桌面 Bundle。",
-  "version": "1.4.0",
+  "description": "言序编辑器：语言服务、运行与调试、规格测试、包工程和 REPL。",
+  "version": "1.5.0",
   "publisher": "yanxulang",
   "license": "MIT",
   "icon": "images/icon.png",
+  "extensionKind": ["workspace"],
+  "capabilities": {
+    "virtualWorkspaces": false,
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "未受信任的工作区可以编辑和查看诊断。运行、调试、测试和会改写文卷的命令需要先信任工作区。",
+      "restrictedConfigurations": ["yanxu.executablePath"]
+    }
+  },
   "galleryBanner": {
     "color": "#C43B2F",
     "theme": "dark"
@@ -13,9 +22,13 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Programming Languages"],
-  "keywords": ["言序", "中文", "Chinese", "language", "yanxu"],
+  "categories": ["Programming Languages", "Debuggers", "Testing"],
+  "keywords": ["言序", "中文", "Chinese", "language", "yanxu", "lsp", "debug"],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/*.yx",
+    "workspaceContains:**/言序.toml"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/YanXuLang/vscode-extension.git"
@@ -47,7 +60,11 @@
         "id": "yanxu",
         "aliases": ["言序", "Yanxu", "yanxu"],
         "extensions": [".yx"],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "images/icon.png",
+          "dark": "images/icon.png"
+        }
       }
     ],
     "grammars": [
@@ -77,7 +94,7 @@
             "properties": {
               "program": {
                 "type": "string",
-                "description": "要调试的 .yx 文卷。",
+                "description": "要调试的 .yx 文卷。输出显示在调试控制台。",
                 "default": "${file}"
               },
               "stopOnEntry": {
@@ -95,39 +112,131 @@
             "name": "调试当前言序文卷",
             "program": "${file}",
             "stopOnEntry": false
+          },
+          {
+            "type": "yanxu",
+            "request": "launch",
+            "name": "调试当前言序文卷并在入口暂停",
+            "program": "${file}",
+            "stopOnEntry": true
           }
         ]
       }
     ],
+    "terminal": {
+      "profiles": [
+        {
+          "id": "yanxu.repl",
+          "title": "言序 REPL",
+          "icon": "terminal"
+        }
+      ]
+    },
     "commands": [
       { "command": "yanxu.runFile", "title": "运行当前文卷", "category": "言序", "icon": "$(play)" },
+      { "command": "yanxu.startDebugging", "title": "调试当前文卷", "category": "言序", "icon": "$(debug-alt)" },
+      { "command": "yanxu.runPackage", "title": "按清单运行包", "category": "言序", "icon": "$(play)" },
       { "command": "yanxu.runSelection", "title": "在 REPL 中运行选区或当前行", "category": "言序" },
       { "command": "yanxu.checkFile", "title": "检查当前文卷", "category": "言序", "icon": "$(check)" },
       { "command": "yanxu.runVm", "title": "使用 VM 运行当前文卷", "category": "言序" },
+      { "command": "yanxu.runCurrentTest", "title": "运行当前文卷的规格测试", "category": "言序", "icon": "$(beaker)" },
       { "command": "yanxu.formatFile", "title": "格式化当前文卷", "category": "言序" },
-      { "command": "yanxu.debugFile", "title": "跟踪当前文卷", "category": "言序" },
+      { "command": "yanxu.debugFile", "title": "输出当前文卷执行踪迹", "category": "言序" },
       { "command": "yanxu.migrateFile", "title": "迁移当前文卷", "category": "言序" },
       { "command": "yanxu.testWorkspace", "title": "运行工作区测试", "category": "言序" },
+      { "command": "yanxu.refreshTests", "title": "刷新规格测试", "category": "言序", "icon": "$(refresh)" },
       { "command": "yanxu.compileWorkspace", "title": "编译工作区 YXB 应用", "category": "言序" },
       { "command": "yanxu.compileBundle", "title": "构建发布版桌面应用 Bundle", "category": "言序", "icon": "$(package)" },
+      { "command": "yanxu.showPackage", "title": "显示包清单", "category": "言序" },
+      { "command": "yanxu.lockPackage", "title": "生成或验证包锁", "category": "言序" },
+      { "command": "yanxu.checkCompatibility", "title": "对照解释器与虚拟机", "category": "言序" },
+      { "command": "yanxu.documentFile", "title": "生成当前文卷 API 文档", "category": "言序" },
+      { "command": "yanxu.newFile", "title": "新建文卷", "category": "言序", "icon": "$(new-file)" },
       { "command": "yanxu.openRepl", "title": "打开 REPL", "category": "言序" },
+      { "command": "yanxu.selectExecutable", "title": "选择言序程序", "category": "言序" },
+      { "command": "yanxu.showToolchain", "title": "显示工具链信息", "category": "言序" },
       { "command": "yanxu.restartLanguageServer", "title": "重启语言服务", "category": "言序" },
       { "command": "yanxu.rebuildIndex", "title": "重建符号索引", "category": "言序" },
       { "command": "yanxu.showLanguageServerOutput", "title": "显示语言服务日志", "category": "言序" },
       { "command": "yanxu.openDocs", "title": "打开文档", "category": "言序" }
     ],
+    "keybindings": [
+      {
+        "command": "yanxu.runFile",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "editorLangId == yanxu && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "yanxu.checkFile",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c",
+        "when": "editorLangId == yanxu && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "yanxu.runSelection",
+        "key": "ctrl+alt+enter",
+        "mac": "cmd+alt+enter",
+        "when": "editorLangId == yanxu && editorTextFocus && editorHasSelection"
+      }
+    ],
     "menus": {
       "editor/title": [
+        { "command": "yanxu.checkFile", "when": "editorLangId == yanxu", "group": "navigation@1" }
+      ],
+      "editor/title/run": [
         { "command": "yanxu.runFile", "when": "editorLangId == yanxu", "group": "navigation@1" },
-        { "command": "yanxu.checkFile", "when": "editorLangId == yanxu", "group": "navigation@2" }
+        { "command": "yanxu.startDebugging", "when": "editorLangId == yanxu", "group": "navigation@2" },
+        { "command": "yanxu.runPackage", "when": "editorLangId == yanxu", "group": "navigation@3" },
+        { "command": "yanxu.runVm", "when": "editorLangId == yanxu", "group": "navigation@4" },
+        { "command": "yanxu.runSelection", "when": "editorLangId == yanxu", "group": "navigation@5" },
+        { "command": "yanxu.runCurrentTest", "when": "editorLangId == yanxu", "group": "navigation@6" }
       ],
       "editor/context": [
         { "command": "yanxu.runSelection", "when": "editorLangId == yanxu", "group": "yanxu@1" },
         { "command": "yanxu.runFile", "when": "editorLangId == yanxu", "group": "yanxu@2" },
-        { "command": "yanxu.checkFile", "when": "editorLangId == yanxu", "group": "yanxu@3" },
-        { "command": "yanxu.migrateFile", "when": "editorLangId == yanxu", "group": "yanxu@4" }
+        { "command": "yanxu.startDebugging", "when": "editorLangId == yanxu", "group": "yanxu@3" },
+        { "command": "yanxu.checkFile", "when": "editorLangId == yanxu", "group": "yanxu@4" },
+        { "command": "yanxu.runCurrentTest", "when": "editorLangId == yanxu", "group": "yanxu@5" },
+        { "command": "yanxu.formatFile", "when": "editorLangId == yanxu", "group": "yanxu@6" },
+        { "command": "yanxu.migrateFile", "when": "editorLangId == yanxu", "group": "yanxu@7" }
       ]
     },
+    "problemMatchers": [
+      {
+        "name": "yanxu",
+        "owner": "yanxu",
+        "source": "言序",
+        "fileLocation": ["autoDetect", "${workspaceFolder}"],
+        "pattern": [
+          {
+            "regexp": "^(词法有误|语法有误|语义有误|类型有误|运行有误|VM 运行有误|编译有误)：(.*)$",
+            "message": 2
+          },
+          {
+            "regexp": "^\\s+-->\\s+(.+):(\\d+):(\\d+)\\s*$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ]
+      },
+      {
+        "name": "yanxu-deprecation",
+        "owner": "yanxu-deprecation",
+        "source": "言序",
+        "severity": "warning",
+        "fileLocation": ["autoDetect", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(提示|警告|错误)\\[([A-Za-z0-9]+)\\]\\s+(.+):(\\d+):(\\d+)：(.*)$",
+          "code": 2,
+          "file": 3,
+          "line": 4,
+          "column": 5,
+          "message": 6
+        }
+      }
+    ],
     "taskDefinitions": [
       {
         "type": "yanxu",
@@ -135,7 +244,7 @@
         "properties": {
           "command": {
             "type": "string",
-            "enum": ["run", "check", "vm", "trace", "test", "compile", "bundle", "migrate"],
+            "enum": ["run", "check", "vm", "trace", "test", "compile", "bundle", "migrate", "doc", "package", "lock", "info", "compat"],
             "description": "要执行的言序任务。"
           },
           "target": {
@@ -145,13 +254,48 @@
         }
       }
     ],
+    "walkthroughs": [
+      {
+        "id": "yanxu.welcome",
+        "title": "开始使用言序",
+        "description": "连接本机言序命令行，然后编辑、运行、调试并查看规格测试。",
+        "steps": [
+          {
+            "id": "install",
+            "title": "安装言序命令行",
+            "description": "语言服务、运行和调试都调用本机的 `yanxu`。\n[下载言序](https://yanxu.dev/download/)\n安装后可以从命令面板运行“言序：选择言序程序”。",
+            "completionEvents": ["onSettingChanged:yanxu.executablePath"]
+          },
+          {
+            "id": "edit",
+            "title": "打开或新建文卷",
+            "description": "打开 `.yx` 文卷，或运行“言序：新建文卷”。诊断、补全、跳转、重命名和格式化由语言服务提供。",
+            "completionEvents": ["onLanguage:yanxu"]
+          },
+          {
+            "id": "run",
+            "title": "运行与调试",
+            "description": "编辑器标题栏的运行菜单可以运行文卷、按清单运行包和启动调试。在行号旁设置断点后按 F5。",
+            "completionEvents": ["onCommand:yanxu.runFile"]
+          },
+          {
+            "id": "test",
+            "title": "查看规格测试",
+            "description": "把带 `// 期：` 期望输出的文卷放在 `spec` 目录。测试面板里的“言序规格”会调用 `yanxu 试`。",
+            "completionEvents": ["onCommand:yanxu.runCurrentTest"]
+          }
+        ]
+      }
+    ],
     "configurationDefaults": {
       "[yanxu]": {
         "editor.autoIndent": "full",
         "editor.insertSpaces": true,
         "editor.tabSize": 4,
         "editor.wordBasedSuggestions": "matchingDocuments",
-        "editor.suggest.matchOnWordStartOnly": false
+        "editor.suggest.matchOnWordStartOnly": false,
+        "editor.defaultFormatter": "yanxulang.yanxu-language",
+        "editor.guides.bracketPairs": "active"
       }
     },
     "configuration": {
@@ -165,17 +309,45 @@
         "yanxu.saveBeforeRun": {
           "type": "boolean",
           "default": true,
-          "description": "运行当前文卷前自动保存。"
+          "description": "运行、检查、调试或迁移当前文卷前自动保存。"
+        },
+        "yanxu.run.programArgs": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "string" },
+          "description": "运行文卷、VM 或包时放在 -- 之后传给程序的参数。"
+        },
+        "yanxu.codeLens.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "在文卷首行显示运行、调试和检查。"
+        },
+        "yanxu.testing.specPattern": {
+          "type": "string",
+          "default": "**/spec/**/*.yx",
+          "description": "测试资源管理器扫描的规格文卷。"
+        },
+        "yanxu.testing.timeout": {
+          "type": "integer",
+          "default": 10000,
+          "minimum": 1,
+          "description": "单个规格文卷的超时，单位毫秒。"
+        },
+        "yanxu.testing.jobs": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "description": "目录测试的并发数。0 表示使用言序默认并发。"
         },
         "yanxu.languageServer.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "自动启动言序语言服务，提供实时诊断和格式化。"
+          "description": "自动启动言序语言服务，提供实时诊断、补全、跳转、重命名和格式化。"
         },
         "yanxu.index.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "扫描言序工作区并为用户声明、成员、导入模块和标准库建立符号索引。"
+          "description": "扫描言序工作区，供签名提示、工作区符号、导入链接和语言服务不可用时的回退补全使用。"
         },
         "yanxu.index.maxFiles": {
           "type": "integer",

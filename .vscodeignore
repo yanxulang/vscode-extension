@@ -3,12 +3,7 @@ scripts/**
 tests/**
 node_modules/**
 package-lock.json
-extension.js
-yanxu-commands.js
-language-features.js
-symbol-index.js
-workspace-indexer.js
-package-resolver.js
+/*.js
 resources/**
 images/icon.svg
 *.vsix
