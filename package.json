@@ -46,7 +46,7 @@
     "package": "vsce package"
   },
   "dependencies": {
-    "pinyin-pro": "^3.28.1",
+    "pinyin-pro": "^3.29.5",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
