@@ -18,6 +18,20 @@ test("工作区测试命令保留目标目录", () => {
   ]);
 });
 
+test("程序参数只附加到会执行文卷的命令", () => {
+  assert.deepEqual(fileArguments("yanxu.runFile", "/tmp/示例.yx", { programArgs: ["甲", "乙"] }), [
+    "/tmp/示例.yx", "--", "甲", "乙"
+  ]);
+  assert.deepEqual(fileArguments("yanxu.checkFile", "/tmp/示例.yx", { programArgs: ["甲"] }), ["查", "/tmp/示例.yx"]);
+  assert.deepEqual(taskArguments("package", "/work", { programArgs: ["甲"] }), ["包", "运行", "/work", "--", "甲"]);
+});
+
+test("规格测试可以附带筛选、并发和 JSON", () => {
+  assert.deepEqual(taskArguments("test", "/work/spec", {
+    test: { filter: "通过", jobs: 2, timeout: 1500, json: true }
+  }), ["试", "/work/spec", "--筛", "通过", "--并发", "2", "--超时", "1500", "--json"]);
+});
+
 test("所有文件命令都引用已声明任务", () => {
   for (const spec of Object.values(FILE_COMMANDS)) assert.ok(TASK_COMMANDS[spec.task]);
 });
